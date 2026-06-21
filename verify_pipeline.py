@@ -6,6 +6,7 @@ load_dotenv()
 
 import asyncio
 import sqlite3
+from PIL import Image
 from ai_engine import process_input, process_image
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "life_ops.db")
@@ -25,7 +26,8 @@ async def test_financial_intent():
         row = cursor.fetchone()
         conn.close()
         print(f"Latest DB Row: {row}")
-        if row and "Fairprice" in row[1] and row[3] == 15.50:
+        # Columns: 0:id, 1:timestamp, 2:merchant, 3:category, 4:amount_sgd, 5:notes, 6:image_blob
+        if row and row[2] == "Fairprice" and row[4] == 15.50:
             print("✅ Financial pipeline test PASSED")
         else:
             print("❌ Financial pipeline test FAILED (check database values)")
@@ -47,7 +49,8 @@ async def test_athletic_intent():
         row = cursor.fetchone()
         conn.close()
         print(f"Latest DB Row: {row}")
-        if row and "Squats" in row[1] and row[4] == 120.0:
+        # Columns: 0:id, 1:timestamp, 2:exercise, 3:sets, 4:reps, 5:weight_kg, 6:rpe, 7:fatigue_flags, 8:image_blob
+        if row and row[2] == "Squats" and row[5] == 120.0:
             print("✅ Athletic pipeline test PASSED")
         else:
             print("❌ Athletic pipeline test FAILED (check database values)")
@@ -57,10 +60,17 @@ async def test_athletic_intent():
 async def test_image_pipeline():
     print("\n--- 3. Testing Image Pipeline ---")
     dummy_img = "test_verify_image.jpg"
-    with open(dummy_img, "wb") as f:
-        # Standard JPG header bytes to satisfy parser
-        f.write(b"\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x01\x00\x60\x00\x60\x00\x00\xFF\xDB\x00\x43\x00")
-        f.write(b"\x00" * 100) # dummy padding
+    # Generate a mock receipt image with readable text using Pillow to satisfy multimodal LLM
+    from PIL import ImageDraw
+    img = Image.new('RGB', (400, 200), color='white')
+    draw = ImageDraw.Draw(img)
+    # Simple block text to simulate a receipt
+    draw.text((20, 30), "Fairprice Groceries", fill='black')
+    draw.text((20, 60), "1 x Apples - 5.50 SGD", fill='black')
+    draw.text((20, 90), "1 x Milk - 10.00 SGD", fill='black')
+    draw.text((20, 120), "Total: 15.50 SGD", fill='black')
+    draw.text((20, 150), "Thank you for shopping!", fill='black')
+    img.save(dummy_img, 'JPEG')
         
     print(f"Created dummy image: {dummy_img}")
     try:

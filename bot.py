@@ -31,6 +31,7 @@ async def handle_photo_message(update: Update, context: ContextTypes.DEFAULT_TYP
     
     await update.message.reply_text("📸 Processing image...")
     
+    local_path = None
     try:
         # Download file
         photo_file = await context.bot.get_file(photo.file_id)
@@ -41,13 +42,13 @@ async def handle_photo_message(update: Update, context: ContextTypes.DEFAULT_TYP
         result = await process_image(local_path)
         await update.message.reply_text(result)
         
-        # Clean up local file immediately
-        if os.path.exists(local_path):
-            os.remove(local_path)
-            print(f"[*] 🗑️ Temporary photo deleted.")
-            
     except Exception as e:
         await update.message.reply_text(f"❌ Error processing image: {e}")
+    finally:
+        # Clean up local file immediately
+        if local_path and os.path.exists(local_path):
+            os.remove(local_path)
+            print(f"[*] 🗑️ Temporary photo deleted.")
 
 def main():
     if not TELEGRAM_TOKEN:
